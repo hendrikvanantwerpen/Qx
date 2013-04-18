@@ -1,0 +1,4 @@
+Alon Dolev <alon@dolev.ch>
+Hendrik van Antwerpen <hendrik@van-antwerpen.net>
+Jasper Ruoff <jruoff@gmail.com>
+Paul Brussee <brussee@live.nl>
