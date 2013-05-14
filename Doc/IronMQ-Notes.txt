@@ -26,6 +26,8 @@ Delivery:
  - What if you pull 100 messages and there's only one in the queue?
  - can you delete a message that is not reserved? Also e.g. after the timeout expired.
    can you delete a message that is not reserved by you?
+   if a message is released/timeout, where does it go on the queue? top, bottom, random?
+ - no feedback if we touch a message that was released because we were too late?
 
 Post:
  - Get an unique message id back.

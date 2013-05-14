@@ -6,11 +6,25 @@ using System.Threading.Tasks;
 
 namespace Qx
 {
+    /**
+     * Message queue pushes messages to us.
+     */
     public interface IMessageQueue : IObservable<Message>
     {
-        void push(IEnumerable<Message> messages);
-        IEnumerable<Message> pull();
+        void Publish(Message messages, double timeOut);
     }
+
+    public interface IPushMessageQueue : IObservable<Message> {
+        IDeliveryInfo Publish(Message message, double timeOut);
+    }
+
+    public interface IDeliveryInfo
+    {
+        async Boolean isDelivered();
+        async void dispose();
+    }
+
+    // CompositeDisposable(d1,d2,...) : Disposable
 
     public class MessageQueue : IMessageQueue
     {
