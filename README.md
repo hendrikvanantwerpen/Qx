@@ -9,6 +9,6 @@ Reactive Messaging
    messages.
    * `OnNext:<message text>`
    * `OnError:<message text>`
-   * `OnCompleted:`
+   * `OnCompleted`
  * A `RabbitPubSubSubject(host,queueName) : Subject<String>` allows
    sending messages over RabbitMQ with a publish subscribe mechanism.
