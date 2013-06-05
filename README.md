@@ -46,32 +46,22 @@ interface Consumer<TState>
     TState Subscribe(IObservalbe<string>) {}
 }
 
-interface ConsumerListener<TLState,TState>
-{
-    TLState Subscribe(IObservalbe<string>) {}
-}
-
 class ExtensionMethods
 {
+    public IObservable<TState> Expose<TState>(this IObservable<string>,
+                                              Exposer<TState>)
+    {
+        // create a connection with SubscribeTo
+        // create ChannelState with possible reconnect behaviour
+        // protocol logic lives here
+    }
+
+    public Pair<IObservable<string>,IObservable<TState>> Consume<TState>(this Consumer<TState>)
+    // or
     public IObservable<string> Consume<TState>(this Consumer<TState>,
                                         IObservable<TState> => ())
     {
         // create a connection with Subscribe
-        // create ChannelState with possible reconnect behaviour
-        // protocol logic lives here
-    }
-
-    public IObservable<(IObservable<string>,IObservable<TState>) Listen<TLState,TState>(this ConsumerListener<TState>, IObservable<TLState> => ())
-    {
-        // create a connection with Subscribe
-        // create ChannelState with possible reconnect behaviour
-        // protocol logic lives here
-    }
-
-    public IObservable<TState> Expose<TState>(this IObservable<string>,
-                                              HereComeDragons<TState>)
-    {
-        // create a connection with SubscribeTo
         // create ChannelState with possible reconnect behaviour
         // protocol logic lives here
     }
@@ -84,6 +74,10 @@ class ExtensionMethods
     {
     }
 }
+
+// point-to-point connections probably need their own Listen method
+// and an alternative to Consumer that creates new connection objects on
+// an incoming connection.
 
 ```
 
@@ -181,7 +175,7 @@ Broker notes:
 | ToChannel.OnCompleted | ToBroker.Close, ChannelState.OnCompleted |
 | ToChannel.Expose | ToBroker.Connect, ChannelState.OnNext |
 | ToBroker.Error | ToBroker.Close, ChannelState.OnError |
-| ChannelState.Subscribe | (if error) ToBroker.Connect, ChannelState.OnNext, ToBroker.Send(pending) |
+| ChannelState.Subscribe | (last state unless error) ToBroker.Connect, ChannelState.OnNext, ToBroker.Send(pending) |
 
 Reconnects are possible.
 
@@ -194,8 +188,8 @@ for a certain time and reopened if a new message arrives.
 |-------|--------|
 | FromBroker.Receive | FromChannel.OnNext |
 | FromBroker.Error | FromBroker.Close, ChannelState.OnError |
-| ChannelState.Subscribe | (if error) FromBroker.Connect, ChannelState.OnNext |
 | FromChannel.Consume | FromBroker.Connect, ChannelState.OnNext |
+| ChannelState.Subscribe | (last state unless error) FromBroker.Connect, ChannelState.OnNext |
 
 Reconnects are possible.
 
@@ -213,7 +207,7 @@ listeners and reopened when someone subscribes.
 | ToChannel.OnCompleted | ToNetwork.Close, ChannelState.OnCompleted |
 | ToChannel.Expose | ToNetwork.Connect, ChannelState.OnNext |
 | ToNetwork.Error | ToNetwork.Close, ChannelState.OnError |
-| ChannelState.Subscribe | (if error) ToNetwork.Connect, ChannelState.OnNext, ToNetwork.Send(pending) |
+| ChannelState.Subscribe | (last state unless error) ToNetwork.Connect, ChannelState.OnNext, ToNetwork.Send(pending) |
 
 Reconnects are possible.
 
@@ -228,6 +222,7 @@ Optimizing disconnects and reconnects are not allowed for point-to-point connect
 | FromNetwork.Receive(error) | FromChannel.OnError, ChannelState.OnCompleted |
 | FromNetwork.Error | FromNetwork.Close, ChannelState.OnError |
 | FromNetwork.Close | FromChannel.OnCompleted, ChannelState.OnCompleted |
+| ChannelState.Subscribe | (last state) |
 
 Reconnects are *not* possible.
 
