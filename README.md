@@ -38,45 +38,39 @@ implemented for every communication method you want to support.
 
 interface Exposer<TState>
 {
-    TState SubscribeTo(IObservalbe<string>) {}
+    Connection Observe(IObservable<string>) {}
 }
 
 interface Consumer<TState>
 {
-    TState Subscribe(IObservalbe<string>) {}
+    Connection Subscribe(IObservable<string>) {}
+}
+
+interface Connection<TState> : IConnectableObservable<TState>
+{
+}
+
+interface Channel<TState> : IObservable<Connection<TState>>
+{
 }
 
 class ExtensionMethods
 {
-    public IObservable<TState> Expose<TState>(this IObservable<string>,
-                                              Exposer<TState>)
+
+    public List<Channel<TState>> Expose<TState>(this IObservable<string> observable, Exposer<TState> next, Exposer<TState> error = null, Exposer<TState> completed = null)
     {
-        // create a connection with SubscribeTo
+        // create a connection with Observe
         // create ChannelState with possible reconnect behaviour
         // protocol logic lives here
     }
 
-    // depending on how you want to compose
-    public Pair<IObservable<string>,IObservable<TState>> Consume<TState>(this Consumer<TState>)
-    // or
-    public IObservable<string> Consume<TState>(this Consumer<TState>,
-                                        IObservable<TState> => ())
-    // or
-    public T Consume<TState>(this Consumer<TState>,
-                                Pair<IObservable<string>, IObservable<TState>> => T)
+    public IObservable<string> Consume<TState>(Consumer<TState> next, Consumer<TState> error, Consumer<TState> completed, List<Channel<TState>> => () = null)
     {
         // create a connection with Subscribe
         // create ChannelState with possible reconnect behaviour
         // protocol logic lives here
     }
 
-    IObservable<string> ConsumeSimple<TState>()
-    {
-        return Consume(state => ())
-    }
-    public IDisposable ExposeSimple<TState>(this IObservable<string>, HereComeDragons<TState>)
-    {
-    }
 }
 
 // point-to-point connections probably need their own Listen method
@@ -165,6 +159,8 @@ General notes:
    problem of the developer? What if you dispose a .Connect, does it
    send a OnCompleted down the line, after the last message? Then
    processing could be finished.
+ * No hidden sharing. If you have a unicast and you Consume twice, you
+   should get different messages.
  * ChannelState manages it's subscribes in generations. If OnCompleted
    or OnError, the previous generation is finished and let go. The
    first of the next generation triggers a connect (although a connect
