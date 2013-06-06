@@ -56,10 +56,14 @@ class ExtensionMethods
         // protocol logic lives here
     }
 
+    // depending on how you want to compose
     public Pair<IObservable<string>,IObservable<TState>> Consume<TState>(this Consumer<TState>)
     // or
     public IObservable<string> Consume<TState>(this Consumer<TState>,
                                         IObservable<TState> => ())
+    // or
+    public T Consume<TState>(this Consumer<TState>,
+                                Pair<IObservable<string>, IObservable<TState>> => T)
     {
         // create a connection with Subscribe
         // create ChannelState with possible reconnect behaviour
@@ -150,6 +154,17 @@ General notes:
  * If no one is subscribed, nothing happens. So if you
    subscribe/dispose a lot but don't want to miss messages, you better
    stick a buffer between.
+ * You can only subscribe once. If you want to share you'll have to
+   use ``Publish()``. The connection is opened/accepted on
+   ``Subscribe`` and closed on ``Dispose``. This is to prevent message
+   loss, so we only accept messages when someone's listening and as
+   soon as we stop listening we don't accept more messages. This way
+   we can support unicast without messages getting lost.
+ * Can a Dispose of the subscription cause message loss if the message
+   is already in the pipeline but not yet fully processed? Is this a
+   problem of the developer? What if you dispose a .Connect, does it
+   send a OnCompleted down the line, after the last message? Then
+   processing could be finished.
  * ChannelState manages it's subscribes in generations. If OnCompleted
    or OnError, the previous generation is finished and let go. The
    first of the next generation triggers a connect (although a connect
@@ -192,9 +207,6 @@ for a certain time and reopened if a new message arrives.
 | ChannelState.Subscribe | (last state unless error) FromBroker.Connect, ChannelState.OnNext |
 
 Reconnects are possible.
-
-For optimization the connection can be closed if there are no
-listeners and reopened when someone subscribes.
 
 ### Semantics for point-to-point connections
 
